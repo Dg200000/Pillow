@@ -12,6 +12,9 @@ backend-path = [
 name = "pillow"
 description = "Python Imaging Library (fork)"
 readme = "README.md"
+dependencies = [
+  "rudin-osher-fatemi>=3.1.2",
+]
 keywords = [
   "Imaging",
 ]
