@@ -12,10 +12,23 @@ spec: https://developer.android.com/media/platform/hdr-image-format
 Reference formula (simplified -- see module docstring note below):
     log2(HDR) = log2(SDR + offset_sdr) + gain_map * (max_log2 - min_log2) + min_log2
 """
-import numpy as np
-from rudin_osher_fatemi import denoise_tv_chambolle
-
 from . import Image
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    from rudin_osher_fatemi import denoise_tv_chambolle
+except ImportError:
+    denoise_tv_chambolle = None
+
+
+def _require_numpy():
+    if np is None:
+        msg = "UltraHdr requires numpy to be installed"
+        raise ImportError(msg)
 
 
 def apply_gain_map(
@@ -53,6 +66,8 @@ def apply_gain_map(
         version could instead return a float array / mode "F" image for
         callers that want the untouched HDR values.)
     """
+    _require_numpy()
+
     if base.mode != "RGB":
         base = base.convert("RGB")
     if gain_map.mode != "L":
@@ -64,6 +79,12 @@ def apply_gain_map(
     gmap = np.asarray(gain_map, dtype=np.float64) / 255.0
 
     if denoise_weight > 0:
+        if denoise_tv_chambolle is None:
+            msg = (
+                "denoise_weight > 0 requires the rudin-osher-fatemi "
+                "package to be installed"
+            )
+            raise ImportError(msg)
         gmap = denoise_tv_chambolle(gmap, weight=denoise_weight)
 
     # Broadcast the single-channel gain map across R, G, B.
